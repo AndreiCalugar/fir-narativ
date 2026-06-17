@@ -22,10 +22,9 @@
       </div>
     </section>
 
-    <!-- VIDEO segment -->
-    <section id="screen-video" class="screen screen-video">
-      <video id="video" class="media" playsinline preload="auto"></video>
-    </section>
+    <!-- VIDEO segment — the <video> element is created at runtime by app.js
+         (createElement + appendChild), so there is no static markup to drift. -->
+    <section id="screen-video" class="screen screen-video"></section>
 
     <!-- IMAGE segment -->
     <section id="screen-image" class="screen screen-image">

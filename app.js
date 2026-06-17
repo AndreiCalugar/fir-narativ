@@ -15,7 +15,6 @@
     pause: document.getElementById('screen-pause'),
     end:   document.getElementById('screen-end')
   }
-  const video        = document.getElementById('video')
   const image        = document.getElementById('image')
   const pauseMessage = document.getElementById('pause-message')
   const blackout     = document.getElementById('blackout')
@@ -27,6 +26,11 @@
   let index = -1            // -1 = IDLE, chapters.length = END
   let started = false
   let transitioning = false // guards against double-advance during fades
+  let currentVideo = null   // the <video> element created for the active segment
+
+  // CLAUDE.md: couple controls the pace — stop on the last frame and wait.
+  // Flip to true if you want the video to advance automatically when it ends.
+  const AUTO_ADVANCE_ON_END = false
 
   // --- Boot -------------------------------------------------------------
   async function boot() {
@@ -106,7 +110,6 @@
     }, 100)
   }
 
-  // Surface HTML5 media errors on screen (helps diagnose Pi codec issues).
   // MediaError codes: 1 ABORTED · 2 NETWORK · 3 DECODE · 4 SRC_NOT_SUPPORTED
   const MEDIA_ERR = {
     1: 'ABORTED (redare întreruptă)',
@@ -114,32 +117,48 @@
     3: 'DECODE (Chromium nu poate decoda codecul)',
     4: 'SRC_NOT_SUPPORTED (format/codec nesuportat)'
   }
-  video.addEventListener('error', () => {
-    const code = video.error ? video.error.code : 0
-    const msg = 'EROARE VIDEO ' + code + ': ' + (MEDIA_ERR[code] || 'necunoscută')
-    console.error(msg, video.error)
-    setStatus(msg)
-    // Show it on the pause-style screen so it's visible on the Pi too.
-    showScreen('pause')
-    pauseMessage.textContent = msg
-  })
 
   // --- Segment renderers -------------------------------------------------
+  // Build a fresh <video> at runtime and append it into the #screen-video
+  // container. No dependency on static markup; a clean element each time
+  // avoids stale state between segments.
   function renderVideo(seg) {
     showScreen('video')
-    video.muted = false           // we want audio (reset any earlier fallback)
-    video.src = seg.file
-    video.load()                  // force a fresh decode when src changes
-    // Start from frame 0 once the browser knows the duration.
-    video.addEventListener('loadedmetadata', () => { video.currentTime = 0 }, { once: true })
-    // Autoplay. Muted fallback only if the browser blocks audio autoplay;
-    // after the first user keypress (start) audio autoplay is allowed.
-    const p = video.play()
+    const container = screens.video
+    container.innerHTML = ''                 // drop any previous <video>
+
+    const v = document.createElement('video')
+    v.className = 'media'                     // 100vw/100vh, object-fit:contain, black bg
+    v.setAttribute('playsinline', '')        // no native fullscreen takeover
+    v.preload = 'auto'
+    v.muted = false                          // we want audio
+    v.src = seg.file
+
+    // Surface decode/codec failures on screen so they're visible on the Pi.
+    v.addEventListener('error', () => {
+      const code = v.error ? v.error.code : 0
+      const msg = 'EROARE VIDEO ' + code + ': ' + (MEDIA_ERR[code] || 'necunoscută')
+      console.error(msg, v.error, '· src:', v.currentSrc)
+      setStatus(msg)
+      showScreen('pause')
+      pauseMessage.textContent = msg
+    })
+    v.addEventListener('loadeddata', () => {
+      console.log('VIDEO OK ·', v.videoWidth + 'x' + v.videoHeight)
+    })
+    // Natural end: stop on the last frame and wait (couple controls the pace).
+    v.addEventListener('ended', () => { if (AUTO_ADVANCE_ON_END) next() })
+
+    container.appendChild(v)
+    currentVideo = v
+
+    // Autoplay; fall back to muted only if the browser blocks audio autoplay.
+    const p = v.play()
     if (p && p.catch) {
       p.catch(err => {
         console.warn('Autoplay blocat, reîncerc muted:', err)
-        video.muted = true
-        video.play().catch(e => console.error('Redare eșuată:', e))
+        v.muted = true
+        v.play().catch(e => console.error('Redare eșuată:', e))
       })
     }
   }
@@ -159,11 +178,15 @@
     pauseMessage.textContent = 'Segment necunoscut: ' + (seg.type || '?')
   }
 
+  // Called when we leave a segment. The blackout already covers the screen,
+  // so we fully tear down the <video> to avoid a stale element lingering.
   function stopVideo() {
-    if (!video.src) return
-    try { video.pause() } catch (e) {}
-    // Note: we intentionally leave the last frame visible (video stays on
-    // its current screen until we switch away), per CLAUDE.md requirement.
+    if (!currentVideo) return
+    try { currentVideo.pause() } catch (e) {}
+    currentVideo.removeAttribute('src')
+    currentVideo.load()
+    currentVideo.remove()
+    currentVideo = null
   }
 
   // --- Navigation --------------------------------------------------------
@@ -199,10 +222,9 @@
   // Debug-only play/pause toggle for the on-screen control.
   function togglePlay() {
     if (!started) { start(); return }
-    const seg = chapters[index]
-    if (seg && seg.type === 'video') {
-      if (video.paused) video.play(); else video.pause()
-      playBtn.textContent = video.paused ? '▶' : '⏸'
+    if (currentVideo) {
+      if (currentVideo.paused) currentVideo.play(); else currentVideo.pause()
+      playBtn.textContent = currentVideo.paused ? '▶' : '⏸'
     }
   }
 
@@ -210,18 +232,16 @@
   // play, so pause/resume are a no-op there but stay valid keys.
   function pauseSegment() {
     if (!started) return
-    const seg = chapters[index]
-    if (seg && seg.type === 'video' && !video.paused) {
-      video.pause()
+    if (currentVideo && !currentVideo.paused) {
+      currentVideo.pause()
       playBtn.textContent = '▶'
     }
   }
 
   function resumeSegment() {
     if (!started) { start(); return }
-    const seg = chapters[index]
-    if (seg && seg.type === 'video' && video.paused) {
-      video.play()
+    if (currentVideo && currentVideo.paused) {
+      currentVideo.play()
       playBtn.textContent = '⏸'
     }
   }
@@ -254,19 +274,6 @@
       default:
         break
     }
-  })
-
-  // --- Video diagnostics -------------------------------------------------
-  // Surfaces the real failure mode on the Pi. If audio plays but the screen
-  // stays blank, this almost always fires with MEDIA_ERR_DECODE (code 3) =
-  // the H.264 video stream can't be decoded -> re-encode to yuv420p.
-  video.addEventListener('error', () => {
-    const err = video.error
-    console.error('VIDEO ERROR', err && err.code, err && err.message, '· src:', video.currentSrc)
-  })
-  video.addEventListener('loadeddata', () => {
-    console.log('VIDEO OK · dimensiuni:', video.videoWidth + 'x' + video.videoHeight)
-    // videoWidth/Height = 0 here means audio decoded but NO video stream painted.
   })
 
   // --- Input: on-screen debug controls ----------------------------------
