@@ -1,0 +1,206 @@
+/* ============================================================
+   Fir Narativ — experience styles
+   Palette: olive #6b7a3f / dark olive #4f5a2e / cream #f5efe4
+            ivory #fbf8f1 / ink #2c2c2a
+   ============================================================ */
+
+:root {
+  --olive: #6b7a3f;
+  --olive-dark: #4f5a2e;
+  --cream: #f5efe4;
+  --ivory: #fbf8f1;
+  --ink: #2c2c2a;
+
+  --fade: 200ms;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  background: #000;
+  overflow: hidden;
+  cursor: none;            /* no mouse cursor by default */
+}
+
+body.show-cursor { cursor: default; }
+
+/* ------------------------------------------------------------
+   Stage + screens
+   ------------------------------------------------------------ */
+.stage {
+  position: fixed;
+  inset: 0;
+  background: #000;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--fade) ease;
+  background: #000;
+}
+
+.screen.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Media (video + image) fill the screen, letterboxed, centered */
+.media {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  background: #000;
+}
+
+/* ------------------------------------------------------------
+   Idle / End screens
+   ------------------------------------------------------------ */
+.idle, .screen-end {
+  background: var(--olive-dark);
+  color: var(--ivory);
+}
+
+.idle-inner { text-align: center; padding: 2rem; }
+
+.idle-title {
+  font-family: 'Caveat', cursive;
+  font-size: clamp(3.5rem, 12vw, 9rem);
+  font-weight: 600;
+  margin: 0 0 0.25em;
+  color: var(--cream);
+}
+
+.idle-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 400;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  letter-spacing: 0.04em;
+  margin: 0 0 2.5rem;
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------
+   Pause screen
+   ------------------------------------------------------------ */
+.screen-pause {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.pause-inner {
+  text-align: center;
+  padding: 3rem;
+  max-width: 80vw;
+}
+
+.pause-message {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 500;
+  font-size: clamp(2rem, 6vw, 4.5rem);
+  line-height: 1.3;
+  margin: 0 0 3rem;
+  white-space: pre-line;   /* honor \n in JSON messages */
+  color: var(--olive-dark);
+}
+
+/* ------------------------------------------------------------
+   Subtle "press to continue" hint (pulsing)
+   ------------------------------------------------------------ */
+.hint {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: clamp(0.9rem, 2vw, 1.3rem);
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+
+.pause-hint { color: var(--olive); }
+
+.hint--pulse { animation: pulse 2.4s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.85; }
+}
+
+/* ------------------------------------------------------------
+   Blackout flash between segments
+   ------------------------------------------------------------ */
+.blackout {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 50;
+  transition: opacity 80ms ease;
+}
+.blackout.is-on {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ------------------------------------------------------------
+   On-screen debug controls (bottom-right corner)
+   ------------------------------------------------------------ */
+.controls {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+
+/* Shown only while mouse is active */
+body.show-cursor .controls {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ctrl {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ivory);
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.ctrl:hover { background: var(--olive); }
+.ctrl:active { background: var(--olive-dark); }
+
+.ctrl-status {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--ivory);
+  font-size: 0.85rem;
+  opacity: 0.8;
+  padding: 0 6px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

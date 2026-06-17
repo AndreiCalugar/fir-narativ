@@ -1,0 +1,8 @@
+[
+  {
+    "id": "video-test",
+    "type": "video",
+    "file": "content/video.mp4",
+    "title": "Video test"
+  }
+]

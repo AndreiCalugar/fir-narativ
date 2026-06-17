@@ -1,0 +1,21 @@
+# Media content — large binaries live locally / on the Pi, not in git
+content/*.mp4
+content/*.mov
+content/*.m4v
+content/*.webm
+content/*.png
+content/*.jpg
+content/*.jpeg
+content/*.mp3
+content/*.m4a
+content/*.wav
+# keep the folder + its placeholder
+!content/.gitkeep
+
+# OS / editor cruft
+.DS_Store
+*.log
+
+# Tooling
+node_modules/
+.claude/

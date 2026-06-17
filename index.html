@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fir Narativ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Stage: where every segment is rendered. Cross-fade handled via .stage opacity -->
+  <main id="stage" class="stage">
+
+    <!-- IDLE / start screen -->
+    <section id="idle" class="screen idle is-active">
+      <div class="idle-inner">
+        <h1 class="idle-title">Fir Narativ</h1>
+        <p class="idle-sub">Apăsați pentru a începe</p>
+        <span class="hint hint--pulse">▶ Enter / →</span>
+      </div>
+    </section>
+
+    <!-- VIDEO segment -->
+    <section id="screen-video" class="screen screen-video">
+      <video id="video" class="media" playsinline preload="auto"></video>
+    </section>
+
+    <!-- IMAGE segment -->
+    <section id="screen-image" class="screen screen-image">
+      <img id="image" class="media" alt="" />
+    </section>
+
+    <!-- PAUSE segment -->
+    <section id="screen-pause" class="screen screen-pause">
+      <div class="pause-inner">
+        <p id="pause-message" class="pause-message"></p>
+        <span class="hint hint--pulse pause-hint">apăsați pentru a continua</span>
+      </div>
+    </section>
+
+    <!-- END screen -->
+    <section id="screen-end" class="screen screen-end">
+      <div class="idle-inner">
+        <h1 class="idle-title">Sfârșit</h1>
+        <p class="idle-sub">Mulțumim.</p>
+        <span class="hint">⏮ înapoi pentru a relua</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Black flash overlay for the 100ms pause between segments -->
+  <div id="blackout" class="blackout"></div>
+
+  <!-- On-screen debug controls (hidden when mouse idle) -->
+  <div id="controls" class="controls">
+    <button id="btn-back"  class="ctrl" title="Înapoi">⏮</button>
+    <button id="btn-play"  class="ctrl" title="Start / Pause">▶</button>
+    <button id="btn-next"  class="ctrl" title="Înainte">⏭</button>
+    <span id="ctrl-status" class="ctrl-status"></span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
