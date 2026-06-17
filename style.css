@@ -54,12 +54,16 @@ body.show-cursor { cursor: default; }
   visibility: visible;
 }
 
-/* Media (video + image) fill the screen, letterboxed, centered */
+/* Media (video + image) fill the screen, letterboxed, centered.
+   Absolute + full-size + object-fit:contain is more robust on the Pi than
+   intrinsic auto-sizing: it guarantees a non-zero painted box regardless of
+   when video metadata loads, and avoids the 300x150 default-video-size gap. */
 .media {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
   background: #000;
 }

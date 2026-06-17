@@ -109,8 +109,11 @@
   // --- Segment renderers -------------------------------------------------
   function renderVideo(seg) {
     showScreen('video')
+    video.muted = false           // we want audio (reset any earlier fallback)
     video.src = seg.file
-    video.currentTime = 0
+    video.load()                  // force a fresh decode when src changes
+    // Start from frame 0 once the browser knows the duration.
+    video.addEventListener('loadedmetadata', () => { video.currentTime = 0 }, { once: true })
     // Autoplay. Muted fallback only if the browser blocks audio autoplay;
     // after the first user keypress (start) audio autoplay is allowed.
     const p = video.play()
@@ -233,6 +236,19 @@
       default:
         break
     }
+  })
+
+  // --- Video diagnostics -------------------------------------------------
+  // Surfaces the real failure mode on the Pi. If audio plays but the screen
+  // stays blank, this almost always fires with MEDIA_ERR_DECODE (code 3) =
+  // the H.264 video stream can't be decoded -> re-encode to yuv420p.
+  video.addEventListener('error', () => {
+    const err = video.error
+    console.error('VIDEO ERROR', err && err.code, err && err.message, '· src:', video.currentSrc)
+  })
+  video.addEventListener('loadeddata', () => {
+    console.log('VIDEO OK · dimensiuni:', video.videoWidth + 'x' + video.videoHeight)
+    // videoWidth/Height = 0 here means audio decoded but NO video stream painted.
   })
 
   // --- Input: on-screen debug controls ----------------------------------
