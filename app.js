@@ -106,6 +106,24 @@
     }, 100)
   }
 
+  // Surface HTML5 media errors on screen (helps diagnose Pi codec issues).
+  // MediaError codes: 1 ABORTED · 2 NETWORK · 3 DECODE · 4 SRC_NOT_SUPPORTED
+  const MEDIA_ERR = {
+    1: 'ABORTED (redare întreruptă)',
+    2: 'NETWORK (eroare de rețea/server)',
+    3: 'DECODE (Chromium nu poate decoda codecul)',
+    4: 'SRC_NOT_SUPPORTED (format/codec nesuportat)'
+  }
+  video.addEventListener('error', () => {
+    const code = video.error ? video.error.code : 0
+    const msg = 'EROARE VIDEO ' + code + ': ' + (MEDIA_ERR[code] || 'necunoscută')
+    console.error(msg, video.error)
+    setStatus(msg)
+    // Show it on the pause-style screen so it's visible on the Pi too.
+    showScreen('pause')
+    pauseMessage.textContent = msg
+  })
+
   // --- Segment renderers -------------------------------------------------
   function renderVideo(seg) {
     showScreen('video')
