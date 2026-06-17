@@ -24,6 +24,7 @@
   // --- State ------------------------------------------------------------
   let chapters = []
   let index = -1            // -1 = IDLE, chapters.length = END
+  let renderedIndex = null  // index currently painted; guards redundant re-renders
   let started = false
   let transitioning = false // guards against double-advance during fades
   let currentVideo = null   // the <video> element created for the active segment
@@ -65,8 +66,15 @@
 
   // Render the current segment. Wrapped in a short blackout so the eye
   // gets a clean cut between segments instead of a cross-dissolve smear.
+  // Guard: never rebuild the slide we're already showing (avoids the
+  // redundant VIDEO REMOVED -> VIDEO CREATED churn on repeated input).
   function render() {
     if (transitioning) return
+    if (index === renderedIndex) {
+      console.log('⏭ render skipped — already on index', index)
+      return
+    }
+    renderedIndex = index
 
     // IDLE
     if (index < 0) {
@@ -288,6 +296,7 @@
   // → / PageDown : înainte   ← / PageUp : înapoi
   // Space : pauză            Enter : continuă (unpause)
   document.addEventListener('keydown', (e) => {
+    if (e.repeat) return        // ignore key auto-repeat (held button on remotes)
     switch (e.key) {
       case 'ArrowRight':
       case 'PageDown':

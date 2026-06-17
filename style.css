@@ -40,6 +40,8 @@ body.show-cursor { cursor: default; }
 .screen {
   position: absolute;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,15 +56,16 @@ body.show-cursor { cursor: default; }
   visibility: visible;
 }
 
-/* Media (video + image) fill the screen, letterboxed, centered.
-   Absolute + full-size + object-fit:contain is more robust on the Pi than
-   intrinsic auto-sizing: it guarantees a non-zero painted box regardless of
-   when video metadata loads, and avoids the 300x150 default-video-size gap. */
+/* Media (video + image) fill the whole viewport, letterboxed, centered.
+   Sized in viewport units (100vw/100vh) and anchored top-left so the box is
+   ALWAYS full-screen regardless of how the parent chain computes — this is
+   what fixes the Pi rendering the video at 637px instead of 1920px. */
 .media {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   object-fit: contain;
   display: block;
   background: #000;
