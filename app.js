@@ -135,6 +135,7 @@
     const v = document.createElement('video')
     v.className = 'media'                     // 100vw/100vh, object-fit:contain, black bg
     v.setAttribute('playsinline', '')        // no native fullscreen takeover
+    v.tabIndex = -1                          // not focusable: don't let it eat keys
     v.preload = 'auto'
     v.muted = false                          // we want audio
     v.src = seg.file
@@ -252,7 +253,6 @@
   // → / PageDown : înainte   ← / PageUp : înapoi
   // Space : pauză            Enter : continuă (unpause)
   document.addEventListener('keydown', (e) => {
-    if (e.repeat) return        // ignore key auto-repeat (held button on remotes)
     switch (e.key) {
       case 'ArrowRight':
       case 'PageDown':
