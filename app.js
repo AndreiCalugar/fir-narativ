@@ -70,10 +70,7 @@
   // redundant VIDEO REMOVED -> VIDEO CREATED churn on repeated input).
   function render() {
     if (transitioning) return
-    if (index === renderedIndex) {
-      console.log('⏭ render skipped — already on index', index)
-      return
-    }
+    if (index === renderedIndex) return   // already showing this slide; skip rebuild
     renderedIndex = index
 
     // IDLE
@@ -142,13 +139,6 @@
     v.muted = false                          // we want audio
     v.src = seg.file
 
-    // [DEBUG] element just created
-    console.log('🎬 VIDEO CREATED:', {
-      src: v.src,
-      readyState: v.readyState,
-      networkState: v.networkState
-    })
-
     // Surface decode/codec failures on screen so they're visible on the Pi.
     v.addEventListener('error', () => {
       const code = v.error ? v.error.code : 0
@@ -158,52 +148,19 @@
       showScreen('pause')
       pauseMessage.textContent = msg
     })
-    v.addEventListener('loadeddata', () => {
-      console.log('VIDEO OK ·', v.videoWidth + 'x' + v.videoHeight)
-    })
     // Natural end: stop on the last frame and wait (couple controls the pace).
     v.addEventListener('ended', () => { if (AUTO_ADVANCE_ON_END) next() })
-
-    // [DEBUG] verbose media lifecycle events
-    v.addEventListener('loadedmetadata', () => console.log('🎬 metadata loaded:', v.videoWidth, 'x', v.videoHeight))
-    v.addEventListener('canplay', () => console.log('🎬 canplay'))
-    v.addEventListener('playing', () => console.log('🎬 PLAYING · paused:', v.paused, '· currentTime:', v.currentTime))
-    v.addEventListener('pause', () => console.log('🎬 paused at', v.currentTime))
-    v.addEventListener('error', () => console.error('🎬 VIDEO ERROR:', v.error && v.error.code, v.error && v.error.message))
-    v.addEventListener('stalled', () => console.log('🎬 stalled'))
-    v.addEventListener('waiting', () => console.log('🎬 waiting'))
 
     container.appendChild(v)
     currentVideo = v
 
-    // [DEBUG] computed layout once it's in the DOM
-    const cs = getComputedStyle(v)
-    console.log('🎬 VIDEO IN DOM:', {
-      parent: v.parentElement && v.parentElement.tagName,
-      parentClass: v.parentElement && v.parentElement.className,
-      display: cs.display,
-      visibility: cs.visibility,
-      opacity: cs.opacity,
-      width: cs.width,
-      height: cs.height,
-      position: cs.position,
-      zIndex: cs.zIndex,
-      rect: v.getBoundingClientRect()
-    })
-
     // Autoplay; fall back to muted only if the browser blocks audio autoplay.
     const p = v.play()
-    if (p && p.then) {
-      p.then(() => console.log('🎬 PLAY SUCCESS - paused:', v.paused))
-       .catch(err => console.error('🎬 PLAY FAILED:', err.name, err.message))
-    }
     if (p && p.catch) {
       p.catch(err => {
         console.warn('Autoplay blocat, reîncerc muted:', err)
         v.muted = true
-        v.play()
-          .then(() => console.log('🎬 PLAY SUCCESS (muted) - paused:', v.paused))
-          .catch(e => console.error('🎬 PLAY FAILED (muted):', e.name, e.message))
+        v.play().catch(e => console.error('Redare eșuată:', e))
       })
     }
   }
@@ -227,7 +184,6 @@
   // so we fully tear down the <video> to avoid a stale element lingering.
   function stopVideo() {
     if (!currentVideo) return
-    console.log('🎬 VIDEO REMOVED from slide')
     try { currentVideo.pause() } catch (e) {}
     currentVideo.removeAttribute('src')
     currentVideo.load()
